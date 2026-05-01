@@ -221,23 +221,28 @@ const BUILD_MAP = {
   "m-slim":"slim","m-avg":"avg","m-full":"full",
   "t-slim":"slim","t-avg":"avg","t-full":"full"
 };
+// Unsplash 키워드 기반 패션 이미지 — 항상 패션 사진만 나옴
 const POOL = [
-  {id:"1515886657613-9f3515b0c78f",ages:["20대","30대"],           builds:["slim","avg"]},
-  {id:"1469334031218-e382a71b716b",ages:["20대","30대","40대"],     builds:["avg","slim"]},
-  {id:"1483985988355-763728e1802b",ages:["30대","40대","50대"],     builds:["avg","full"]},
-  {id:"1509631179647-0177331693ae",ages:["20대","30대"],           builds:["slim","avg"]},
-  {id:"1566206091558-7f218b696731",ages:["20대","30대","40대"],     builds:["slim","avg","full"]},
-  {id:"1551698618-1dfe5d97d256",   ages:["20대","30대"],           builds:["slim","avg"]},
-  {id:"1485518882345-15568b007407",ages:["30대","40대","50대"],     builds:["slim","avg","full"]},
-  {id:"1496747611176-843222e1e57c",ages:["40대","50대","60대"],     builds:["slim","avg"]},
-  {id:"1529139574466-a303027c1d8b",ages:["20대"],                  builds:["slim","avg"]},
-  {id:"1490481651871-ab68de25d43d",ages:["20대","30대"],           builds:["slim"]},
-  {id:"1539109136881-3be0616acf4b",ages:["20대","30대","40대"],     builds:["avg","full"]},
-  {id:"1594938298603-c8148c4b4f3c",ages:["30대","40대","50대"],     builds:["avg","slim"]},
-  {id:"1487222477894-8943e31ef7b2",ages:["40대","50대","60대"],     builds:["slim","avg"]},
-  {id:"1519742866993-66d3cfef4bbd",ages:["20대","30대","40대","50대","60대"],builds:["slim","avg","full"]},
-  {id:"1525507119428-aa5912f8ea30",ages:["30대","40대","50대","60대"],builds:["slim","avg"]},
-  {id:"1475180098004-ca77a66827be",ages:["30대","40대"],           builds:["slim","avg","full"]},
+  {kw:"korean+street+fashion+woman",      ages:["20대","30대"],                      builds:["slim","avg"]},
+  {kw:"casual+chic+outfit+woman",         ages:["20대","30대","40대"],                builds:["avg","slim"]},
+  {kw:"elegant+woman+fashion+street",     ages:["30대","40대","50대"],                builds:["avg","full"]},
+  {kw:"trendy+fashion+woman+outfit",      ages:["20대","30대"],                      builds:["slim","avg"]},
+  {kw:"feminine+dress+fashion+woman",     ages:["20대","30대","40대"],                builds:["slim","avg","full"]},
+  {kw:"minimalist+fashion+woman+style",   ages:["30대","40대","50대"],                builds:["slim","avg"]},
+  {kw:"chic+blazer+woman+fashion",        ages:["30대","40대","50대"],                builds:["slim","avg","full"]},
+  {kw:"classic+fashion+woman+coat",       ages:["40대","50대","60대"],                builds:["slim","avg"]},
+  {kw:"streetwear+woman+style+urban",     ages:["20대"],                            builds:["slim","avg"]},
+  {kw:"editorial+fashion+woman",          ages:["20대","30대"],                      builds:["slim"]},
+  {kw:"colorful+fashion+woman+outfit",    ages:["20대","30대","40대"],                builds:["avg","full"]},
+  {kw:"contemporary+fashion+woman+style", ages:["30대","40대","50대"],                builds:["avg","slim"]},
+  {kw:"sophisticated+woman+fashion",      ages:["40대","50대","60대"],                builds:["slim","avg"]},
+  {kw:"romantic+dress+woman+fashion",     ages:["20대","30대","40대","50대","60대"],  builds:["slim","avg","full"]},
+  {kw:"allblack+fashion+woman+luxury",    ages:["30대","40대","50대","60대"],         builds:["slim","avg"]},
+  {kw:"retro+vintage+woman+fashion",      ages:["30대","40대"],                      builds:["slim","avg","full"]},
+  {kw:"smart+casual+woman+style",         ages:["40대","50대","60대"],                builds:["avg","full"]},
+  {kw:"boho+fashion+woman+outfit",        ages:["20대","30대"],                      builds:["slim","avg","full"]},
+  {kw:"tailored+suit+woman+fashion",      ages:["30대","40대","50대"],                builds:["slim","avg"]},
+  {kw:"sporty+chic+woman+fashion",        ages:["20대","30대"],                      builds:["slim","avg"]},
 ];
 const HEIGHTS = [520,640,560,600,480,620];
 
@@ -262,15 +267,17 @@ function handleCurate(){
   masonry.innerHTML = "";
   imgs.forEach((img,i) => {
     const h = HEIGHTS[i % HEIGHTS.length];
+    const seed = i + currentAge + currentBody; // 매번 다른 시드
     const wrap = document.createElement("div");
     wrap.className = "masonry-item";
     wrap.style.animationDelay = (i*55)+"ms";
     wrap.onclick = () => openModal(img);
     const el = document.createElement("img");
-    el.src = `https://images.unsplash.com/${img.id}?w=400&h=${h}&fit=crop&q=75`;
+    // Unsplash Source API — 키워드 기반으로 항상 관련 사진
+    el.src = `https://source.unsplash.com/400x${h}/?${img.kw}&sig=${i}`;
     el.alt = "";
     el.draggable = false;
-    el.onerror = function(){ this.src=`https://picsum.photos/seed/${img.id.slice(0,6)}/400/${h}`; };
+    el.onerror = function(){ this.src=`https://picsum.photos/seed/fashion${i}/400/${h}`; };
     wrap.appendChild(el);
     masonry.appendChild(wrap);
   });
@@ -280,8 +287,8 @@ function handleCurate(){
 }
 
 function openModal(img){
-  document.getElementById("modalImg").src = `https://images.unsplash.com/${img.id}?w=400&h=600&fit=crop&q=80`;
-  document.getElementById("modalImg").onerror = function(){ this.src=`https://picsum.photos/seed/${img.id.slice(0,6)}/400/560`; };
+  document.getElementById("modalImg").src = `https://source.unsplash.com/400x600/?${img.kw}`;
+  document.getElementById("modalImg").onerror = function(){ this.src=`https://picsum.photos/seed/fashion/400/560`; };
   document.getElementById("modalMeta").textContent = currentAge + " · " + BODY_LABELS[currentBody];
   document.getElementById("modalContent").innerHTML = '<div class="loading-row"><span class="spinner"></span> AI 스타일 분석 중...</div>';
   document.getElementById("modalOverlay").style.display = "flex";
