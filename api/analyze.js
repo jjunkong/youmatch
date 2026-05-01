@@ -59,9 +59,9 @@ JSON만 반환 (코드블록 없이):
   "tip": "${bodyType} 체형을 위한 스타일링 팁 한 문장",
   "occasions": ["어울리는 상황1", "상황2"],
   "shopping": [
-    {"item": "이미지 속 실제 아이템명", "keyword": "색상+스타일+아이템 (예: 핑크 오버핏 반팔 티셔츠 여성)", "category": "카테고리"},
-    {"item": "이미지 속 실제 아이템명", "keyword": "색상+스타일+아이템", "category": "카테고리"},
-    {"item": "이미지 속 실제 아이템명", "keyword": "색상+스타일+아이템", "category": "카테고리"}
+    {"item": "이미지 속 실제 아이템명", "keyword": "반드시 색상+핏+아이템+여성 포함 (예: 회색 루즈핏 가디건 여성)", "category": "카테고리"},
+    {"item": "이미지 속 실제 아이템명", "keyword": "색상+핏+아이템+여성 (예: 네이비 스트라이프 반팔 티셔츠 여성)", "category": "카테고리"},
+    {"item": "이미지 속 실제 아이템명", "keyword": "색상+핏+아이템+여성", "category": "카테고리"}
   ]
 }`
     });
@@ -102,12 +102,11 @@ JSON만 반환 (코드블록 없이):
             const naverData = await naverRes.json();
             console.log("Naver status:", naverRes.status);
             console.log("Naver response:", JSON.stringify(naverData).slice(0, 300));
-            const products = (naverData.items || []).map(p => ({
+      const products = (naverData.items || []).map(p => ({
               title: p.title.replace(/<[^>]+>/g, ""),
               price: parseInt(p.lprice).toLocaleString() + "원",
               image: p.image,
               link: p.link,
-              mall: p.mallName,
             }));
             return { ...s, products };
           } catch {
