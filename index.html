@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>STYLE — 나만의 패션 큐레이션</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080706;--surface:#111009;--surface2:#191714;
+  --text:#EDE8E0;--muted:#6B6560;--accent:#C9956A;
+  --border:rgba(237,232,224,0.1);--accent-faint:rgba(201,149,106,0.13);
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+h1,h2,h3,.serif{font-family:'Cormorant Garamond',Georgia,serif;}
+
+/* ── Header ── */
+header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(8,7,6,0.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 clamp(20px,4vw,64px);
+  height:62px;display:flex;align-items:center;justify-content:space-between;
+}
+.logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;letter-spacing:.22em;}
+.logo span{color:var(--accent);}
+nav{display:flex;gap:28px;}
+nav a{font-size:11px;letter-spacing:.1em;color:var(--muted);cursor:pointer;text-decoration:none;}
+.settings-btn{background:none;border:1px solid var(--border);border-radius:3px;padding:6px 14px;color:var(--muted);font-size:10px;letter-spacing:.15em;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.settings-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── Hero ── */
+.hero{padding:clamp(64px,9vw,130px) clamp(20px,4vw,64px) 0;}
+.eyebrow{font-size:9px;letter-spacing:.35em;color:var(--accent);margin-bottom:22px;}
+.hero h1{font-size:clamp(48px,8vw,96px);font-weight:300;line-height:1.03;margin-bottom:26px;max-width:720px;}
+.hero h1 em{color:var(--accent);font-style:italic;}
+.hero p{color:var(--muted);font-size:15px;line-height:1.85;max-width:400px;margin-bottom:clamp(52px,7vw,96px);}
+
+/* ── Selector ── */
+.selector{padding:0 clamp(20px,4vw,64px) clamp(64px,8vw,110px);}
+.selector-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;max-width:700px;}
+.field{flex:1 1 180px;min-width:160px;}
+.field.wide{flex:1 1 210px;min-width:190px;}
+.field label{display:block;font-size:9px;letter-spacing:.28em;color:var(--muted);margin-bottom:12px;}
+.select-wrap{position:relative;}
+select{
+  appearance:none;-webkit-appearance:none;
+  background:var(--surface);color:var(--text);
+  border:1px solid var(--border);border-radius:3px;
+  padding:14px 44px 14px 20px;
+  font-size:14px;font-family:'DM Sans',sans-serif;letter-spacing:.03em;
+  cursor:pointer;outline:none;width:100%;transition:border-color .2s;
+}
+select:focus{border-color:var(--accent);}
+select option{background:#111009;color:#EDE8E0;}
+.chevron{position:absolute;right:16px;top:50%;transform:translateY(-50%);pointer-events:none;}
+.btn-curate{
+  flex:0 0 auto;
+  background:var(--accent);color:var(--bg);
+  border:1px solid var(--accent);border-radius:3px;
+  height:50px;padding:0 44px;
+  font-size:12px;letter-spacing:.2em;font-family:'DM Sans',sans-serif;font-weight:500;
+  cursor:pointer;transition:all .25s;white-space:nowrap;
+}
+.btn-curate:disabled{background:transparent;color:var(--muted);border-color:var(--border);cursor:default;}
+
+/* ── Feed ── */
+.feed{padding:0 clamp(16px,3vw,64px) 120px;}
+.feed-header{border-top:1px solid var(--border);padding-top:52px;margin-bottom:36px;display:flex;justify-content:space-between;align-items:flex-end;}
+.feed-header h2{font-size:clamp(24px,3.5vw,38px);font-weight:300;}
+.feed-label{font-size:9px;letter-spacing:.25em;color:var(--accent);margin-bottom:10px;}
+.feed-count{font-size:11px;color:var(--muted);}
+.masonry{columns:clamp(150px,20vw,240px);column-gap:10px;}
+.masonry-item{break-inside:avoid;margin-bottom:10px;border-radius:3px;overflow:hidden;cursor:pointer;background:var(--surface);opacity:0;animation:fadeUp .55s ease forwards;}
+.masonry-item img{width:100%;display:block;transition:transform .5s ease;}
+.masonry-item:hover img{transform:scale(1.04);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Modal overlay ── */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(8,7,6,0.96);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+.modal{background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:100%;max-width:820px;display:grid;grid-template-columns:270px 1fr;overflow:hidden;max-height:92vh;}
+.modal-img{overflow:hidden;min-height:340px;}
+.modal-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.modal-panel{padding:32px 28px;overflow-y:auto;}
+.modal-top{display:flex;justify-content:space-between;margin-bottom:28px;}
+.modal-meta{font-size:9px;letter-spacing:.22em;color:var(--accent);margin-bottom:8px;}
+.modal-title{font-size:26px;font-weight:300;line-height:1.15;}
+.btn-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1;padding:0;}
+.core-label{font-size:8px;letter-spacing:.22em;color:var(--muted);margin-bottom:6px;}
+.core-style{font-size:24px;color:var(--accent);font-style:italic;font-weight:300;font-family:'Cormorant Garamond',serif;margin-bottom:22px;}
+.desc{color:#ABA39A;line-height:1.8;margin-bottom:24px;font-size:13px;}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px;}
+.tag{border:1px solid var(--border);border-radius:2px;padding:5px 12px;font-size:11px;color:var(--text);}
+.tip-box{background:var(--accent-faint);border:1px solid rgba(201,149,106,0.22);border-radius:4px;padding:14px 16px;margin-bottom:24px;}
+.tip-label{font-size:8px;letter-spacing:.18em;color:var(--accent);margin-bottom:5px;}
+.tip-text{color:var(--text);line-height:1.65;font-size:13px;}
+.occasion-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+.occasion{font-size:10px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 12px;}
+.shop-label{font-size:8px;letter-spacing:.22em;color:var(--muted);margin-bottom:12px;}
+.shop-item{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.shop-name{color:var(--text);}
+.shop-cat{font-size:10px;color:var(--muted);margin-top:2px;}
+.shop-price{font-size:11px;color:var(--accent);text-align:right;}
+.btn-shop{margin-top:6px;font-size:9px;letter-spacing:.12em;border:1px solid var(--border);border-radius:2px;padding:4px 10px;background:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;display:block;}
+.spinner{width:14px;height:14px;display:inline-block;border:1.5px solid rgba(201,149,106,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-row{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:16px 0;}
+
+/* ── Settings modal ── */
+.settings-overlay{position:fixed;inset:0;z-index:300;background:rgba(8,7,6,0.97);display:flex;align-items:center;justify-content:center;padding:20px;}
+.settings-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:100%;max-width:480px;padding:40px 36px;}
+.settings-box h2{font-size:28px;font-weight:300;margin-bottom:8px;}
+.settings-box p{color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:28px;}
+.settings-box label{display:block;font-size:9px;letter-spacing:.25em;color:var(--muted);margin-bottom:10px;}
+.key-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:13px 16px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;letter-spacing:.04em;outline:none;transition:border-color .2s;}
+.key-input:focus{border-color:var(--accent);}
+.key-hint{font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:24px;}
+.btn-save{background:var(--accent);color:var(--bg);border:none;border-radius:3px;padding:13px 36px;font-size:12px;letter-spacing:.18em;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:opacity .2s;}
+.btn-save:hover{opacity:.88;}
+.btn-skip{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-left:16px;font-family:'DM Sans',sans-serif;}
+.key-saved{font-size:11px;color:var(--accent);margin-top:10px;}
+
+/* ── No-key notice ── */
+.nokey-notice{background:var(--accent-faint);border:1px solid rgba(201,149,106,0.3);border-radius:4px;padding:14px 18px;margin-bottom:18px;font-size:12px;color:var(--muted);line-height:1.6;}
+.nokey-notice button{color:var(--accent);background:none;border:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;text-decoration:underline;padding:0;}
+
+/* ── Responsive ── */
+@media(max-width:580px){
+  .modal{grid-template-columns:1fr !important;}
+  .modal-img{max-height:44vh;}
+  nav{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">STY<span>L</span>E</div>
+  <nav>
+    <a>컬렉션</a>
+    <a>스타일 가이드</a>
+    <a>뉴 인</a>
+  </nav>
+  <button class="settings-btn" onclick="openSettings()">API 설정</button>
+</header>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <p class="eyebrow">PERSONALIZED FASHION CURATION</p>
+  <h1 class="serif">
+    당신만의<br>
+    <em>스타일</em>을<br>
+    발견하세요
+  </h1>
+  <p>연령과 체형을 선택하면,<br>AI가 당신에게 꼭 맞는 패션을 큐레이션합니다.</p>
+</section>
+
+<!-- ── Selector ── -->
+<section class="selector">
+  <div class="selector-row">
+
+    <div class="field">
+      <label>연령대</label>
+      <div class="select-wrap">
+        <select id="selAge">
+          <option value="" disabled selected>선택하세요</option>
+          <option>20대</option><option>30대</option>
+          <option>40대</option><option>50대</option><option>60대</option>
+        </select>
+        <svg class="chevron" width="10" height="6" viewBox="0 0 10 6" fill="none">
+          <path d="M1 1L5 5L9 1" stroke="#C9956A" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="field wide">
+      <label>체형</label>
+      <div class="select-wrap">
+        <select id="selBody">
+          <option value="" disabled selected>선택하세요</option>
+          <option value="s-slim">키 작고 마른</option>
+          <option value="s-avg">키 작고 보통</option>
+          <option value="s-full">키 작고 통통</option>
+          <option value="m-slim">키 중간 마른</option>
+          <option value="m-avg">키 중간 보통</option>
+          <option value="m-full">키 중간 통통</option>
+          <option value="t-slim">키 크고 마른</option>
+          <option value="t-avg">키 크고 보통</option>
+          <option value="t-full">키 크고 통통</option>
+        </select>
+        <svg class="chevron" width="10" height="6" viewBox="0 0 10 6" fill="none">
+          <path d="M1 1L5 5L9 1" stroke="#C9956A" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <button class="btn-curate" id="btnCurate" disabled onclick="handleCurate()">큐레이팅</button>
+  </div>
+</section>
+
+<!-- ── Feed ── -->
+<section class="feed" id="feed" style="display:none;">
+  <div class="feed-header">
+    <div>
+      <p class="feed-label" id="feedLabel"></p>
+      <h2 class="serif">큐레이팅된 스타일</h2>
+    </div>
+    <span class="feed-count" id="feedCount"></span>
+  </div>
+  <div class="masonry" id="masonry"></div>
+</section>
+
+<!-- ── Style Modal ── -->
+<div class="overlay" id="modalOverlay" style="display:none;" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-img">
+      <img id="modalImg" src="" alt=""/>
+    </div>
+    <div class="modal-panel">
+      <div class="modal-top">
+        <div>
+          <p class="modal-meta" id="modalMeta"></p>
+          <h3 class="modal-title serif">스타일 분석</h3>
+        </div>
+        <button class="btn-close" onclick="closeModal()">×</button>
+      </div>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Settings Modal ── -->
+<div class="settings-overlay" id="settingsOverlay" style="display:none;">
+  <div class="settings-box">
+    <h2 class="serif">API 설정</h2>
+    <p>AI 스타일 분석 기능을 사용하려면<br>Anthropic API 키를 입력해주세요.<br>키는 이 브라우저에만 저장되고 외부로 전송되지 않습니다.</p>
+    <label>ANTHROPIC API KEY</label>
+    <input class="key-input" id="keyInput" type="password" placeholder="sk-ant-..." />
+    <p class="key-hint">console.anthropic.com → API Keys 에서 발급받을 수 있어요.</p>
+    <button class="btn-save" onclick="saveKey()">저장하기</button>
+    <button class="btn-skip" onclick="closeSettings()">나중에</button>
+    <p class="key-saved" id="keySaved" style="display:none;">✓ 저장되었습니다</p>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────
+const BODY_LABELS = {
+  "s-slim":"키 작고 마른","s-avg":"키 작고 보통","s-full":"키 작고 통통",
+  "m-slim":"키 중간 마른","m-avg":"키 중간 보통","m-full":"키 중간 통통",
+  "t-slim":"키 크고 마른","t-avg":"키 크고 보통","t-full":"키 크고 통통"
+};
+const BUILD_MAP = {
+  "s-slim":"slim","s-avg":"avg","s-full":"full",
+  "m-slim":"slim","m-avg":"avg","m-full":"full",
+  "t-slim":"slim","t-avg":"avg","t-full":"full"
+};
+const POOL = [
+  {id:"1515886657613-9f3515b0c78f", ages:["20대","30대"],           builds:["slim","avg"]},
+  {id:"1469334031218-e382a71b716b", ages:["20대","30대","40대"],     builds:["avg","slim"]},
+  {id:"1483985988355-763728e1802b", ages:["30대","40대","50대"],     builds:["avg","full"]},
+  {id:"1509631179647-0177331693ae", ages:["20대","30대"],           builds:["slim","avg"]},
+  {id:"1566206091558-7f218b696731", ages:["20대","30대","40대"],     builds:["slim","avg","full"]},
+  {id:"1551698618-1dfe5d97d256",   ages:["20대","30대"],           builds:["slim","avg"]},
+  {id:"1485518882345-15568b007407",ages:["30대","40대","50대"],     builds:["slim","avg","full"]},
+  {id:"1496747611176-843222e1e57c",ages:["40대","50대","60대"],     builds:["slim","avg"]},
+  {id:"1529139574466-a303027c1d8b",ages:["20대"],                  builds:["slim","avg"]},
+  {id:"1490481651871-ab68de25d43d",ages:["20대","30대"],           builds:["slim"]},
+  {id:"1539109136881-3be0616acf4b",ages:["20대","30대","40대"],     builds:["avg","full"]},
+  {id:"1594938298603-c8148c4b4f3c",ages:["30대","40대","50대"],     builds:["avg","slim"]},
+  {id:"1487222477894-8943e31ef7b2",ages:["40대","50대","60대"],     builds:["slim","avg"]},
+  {id:"1519742866993-66d3cfef4bbd",ages:["20대","30대","40대","50대","60대"],builds:["slim","avg","full"]},
+  {id:"1525507119428-aa5912f8ea30",ages:["30대","40대","50대","60대"],builds:["slim","avg"]},
+  {id:"1475180098004-ca77a66827be",ages:["30대","40대"],           builds:["slim","avg","full"]},
+];
+const HEIGHTS = [520,640,560,600,480,620];
+
+// ── State ─────────────────────────────────────────
+let currentAge = "";
+let currentBody = "";
+let currentImages = [];
+
+// ── Dropdowns ─────────────────────────────────────
+document.getElementById("selAge").addEventListener("change", function(){
+  currentAge = this.value;
+  checkReady();
+});
+document.getElementById("selBody").addEventListener("change", function(){
+  currentBody = this.value;
+  checkReady();
+});
+function checkReady(){
+  document.getElementById("btnCurate").disabled = !(currentAge && currentBody);
+}
+
+// ── Curate ────────────────────────────────────────
+function handleCurate(){
+  const build = BUILD_MAP[currentBody];
+  let filtered = POOL.filter(img => img.ages.includes(currentAge) && img.builds.includes(build));
+  if(filtered.length < 6){
+    const extra = POOL.filter(img => img.ages.includes(currentAge) && !filtered.includes(img));
+    filtered = [...filtered, ...extra].slice(0,12);
+  } else {
+    filtered = filtered.slice(0,12);
+  }
+  currentImages = filtered.length ? filtered : POOL.slice(0,12);
+
+  const feed = document.getElementById("feed");
+  feed.style.display = "none";
+  document.getElementById("feedLabel").textContent = currentAge + " · " + BODY_LABELS[currentBody];
+  document.getElementById("feedCount").textContent = currentImages.length + "개";
+
+  const masonry = document.getElementById("masonry");
+  masonry.innerHTML = "";
+  currentImages.forEach((img, i) => {
+    const h = HEIGHTS[i % HEIGHTS.length];
+    const wrap = document.createElement("div");
+    wrap.className = "masonry-item";
+    wrap.style.animationDelay = (i * 55) + "ms";
+    wrap.onclick = () => openModal(img);
+    const el = document.createElement("img");
+    el.src = `https://images.unsplash.com/${img.id}?w=400&h=${h}&fit=crop&q=75`;
+    el.alt = "";
+    el.draggable = false;
+    el.onerror = function(){ this.src = `https://picsum.photos/seed/${img.id.slice(0,6)}/400/${h}`; };
+    wrap.appendChild(el);
+    masonry.appendChild(wrap);
+  });
+
+  feed.style.display = "block";
+  setTimeout(() => feed.scrollIntoView({behavior:"smooth", block:"start"}), 80);
+}
+
+// ── Modal ─────────────────────────────────────────
+function openModal(img){
+  const overlay = document.getElementById("modalOverlay");
+  document.getElementById("modalImg").src = `https://images.unsplash.com/${img.id}?w=400&h=600&fit=crop&q=80`;
+  document.getElementById("modalImg").onerror = function(){ this.src = `https://picsum.photos/seed/${img.id.slice(0,6)}/400/560`; };
+  document.getElementById("modalMeta").textContent = currentAge + " · " + BODY_LABELS[currentBody];
+  document.getElementById("modalContent").innerHTML = '<div class="loading-row"><span class="spinner"></span> AI 스타일 분석 중...</div>';
+  overlay.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  analyzeStyle(img);
+}
+function closeModal(){
+  document.getElementById("modalOverlay").style.display = "none";
+  document.body.style.overflow = "";
+}
+function handleOverlayClick(e){
+  if(e.target === e.currentTarget) closeModal();
+}
+
+// ── AI Analysis ───────────────────────────────────
+async function analyzeStyle(img){
+  const apiKey = localStorage.getItem("anthropic_api_key");
+  const btLabel = BODY_LABELS[currentBody];
+  const content = document.getElementById("modalContent");
+
+  if(!apiKey){
+    content.innerHTML = `
+      <div class="nokey-notice">
+        AI 분석 기능을 사용하려면 API 키가 필요해요.<br>
+        <button onclick="openSettings()">여기서 설정하기 →</button>
+      </div>`;
+    return;
+  }
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key": apiKey,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        messages:[{
+          role:"user",
+          content:`패션 스타일리스트로서 분석해주세요.
+착용자: ${currentAge} 여성, 체형: ${btLabel}
+
+JSON만 반환 (코드블록 없이):
+{
+  "coreStyle": "핵심 스타일 키워드 2-3단어",
+  "description": "이 룩의 매력과 특징 설명 2문장",
+  "keyItems": ["핵심 아이템1", "아이템2", "아이템3"],
+  "tip": "${btLabel} 체형을 위한 스타일링 팁 한 문장",
+  "occasions": ["착용 상황1", "상황2"],
+  "shopping": [
+    {"item": "추천 상품명", "category": "카테고리", "price": "가격대"},
+    {"item": "추천 상품명", "category": "카테고리", "price": "가격대"},
+    {"item": "추천 상품명", "category": "카테고리", "price": "가격대"}
+  ]
+}`
+        }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.find(c => c.type==="text")?.text || "{}";
+    const a = JSON.parse(raw.replace(/```json|```/g,"").trim());
+    renderAnalysis(a);
+  } catch(e) {
+    content.innerHTML = `<div class="nokey-notice">분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.</div>`;
+  }
+}
+
+function renderAnalysis(a){
+  const content = document.getElementById("modalContent");
+  let html = "";
+
+  if(a.coreStyle) html += `
+    <p class="core-label">CORE STYLE</p>
+    <p class="core-style">${a.coreStyle}</p>`;
+
+  if(a.description) html += `<p class="desc">${a.description}</p>`;
+
+  if(a.keyItems?.length) html += `
+    <p class="core-label" style="margin-bottom:10px;">KEY ITEMS</p>
+    <div class="tag-row">${a.keyItems.map(item=>`<span class="tag">${item}</span>`).join("")}</div>`;
+
+  if(a.tip) html += `
+    <div class="tip-box">
+      <p class="tip-label">STYLE TIP</p>
+      <p class="tip-text">${a.tip}</p>
+    </div>`;
+
+  if(a.occasions?.length) html += `
+    <div class="occasion-row">${a.occasions.map(oc=>`<span class="occasion">#${oc}</span>`).join("")}</div>`;
+
+  if(a.shopping?.length){
+    html += `<p class="shop-label">추천 쇼핑</p>`;
+    a.shopping.forEach(s => {
+      html += `
+        <div class="shop-item">
+          <div><p class="shop-name">${s.item}</p><p class="shop-cat">${s.category}</p></div>
+          <div style="text-align:right">
+            <p class="shop-price">${s.price}</p>
+            <button class="btn-shop">쇼핑하기 →</button>
+          </div>
+        </div>`;
+    });
+  }
+
+  content.innerHTML = html;
+}
+
+// ── Settings ──────────────────────────────────────
+function openSettings(){
+  const saved = localStorage.getItem("anthropic_api_key");
+  if(saved) document.getElementById("keyInput").value = saved;
+  document.getElementById("keySaved").style.display = "none";
+  document.getElementById("settingsOverlay").style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+function closeSettings(){
+  document.getElementById("settingsOverlay").style.display = "none";
+  document.body.style.overflow = "";
+}
+function saveKey(){
+  const key = document.getElementById("keyInput").value.trim();
+  if(!key) return;
+  localStorage.setItem("anthropic_api_key", key);
+  document.getElementById("keySaved").style.display = "block";
+  setTimeout(closeSettings, 900);
+}
+
+// ── Auto-open settings if no key ──────────────────
+window.addEventListener("load", () => {
+  if(!localStorage.getItem("anthropic_api_key")) openSettings();
+});
+</script>
+</body>
+</html>
+HTMLEOF
