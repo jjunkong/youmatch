@@ -245,6 +245,8 @@ const POOL = [
   {kw:"sporty+chic+woman+fashion",        ages:["20대","30대"],                      builds:["slim","avg"]},
 ];
 const HEIGHTS = [520,640,560,600,480,620];
+const GOOGLE_API_KEY = "AIzaSyCLxTUJ-Znfd0JzKPnntJkAFDLT0MfNMrQ";
+const GOOGLE_CX = "957df819317a14b18";
 const UNSPLASH_KEY = "GLmpQTIEARfkymnswXJD2iWHbwm6NhklCXaqdGlno9Y";
 
 let currentAge = "", currentBody = "";
@@ -268,7 +270,23 @@ async function handleCurate(){
   const masonry = document.getElementById("masonry");
   masonry.innerHTML = "";
 
-  // Unsplash API로 각 키워드별 이미지 가져오기
+  // 연령+체형 한국어 키워드로 구글 이미지 검색
+  const searchQuery = `${currentAge} 여자 ${BODY_LABELS[currentBody]} 패션 코디`;
+  let fetchedImages = [];
+
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(searchQuery)}&searchType=image&num=10&imgType=photo&safe=active`
+    );
+    const data = await res.json();
+    if(data.items) {
+      fetchedImages = data.items.map(item => item.link);
+    }
+  } catch(e) {
+    console.error("Google search error:", e);
+  }
+
+  // 이미지가 부족하면 Unsplash로 보충
   for(let i = 0; i < imgs.length; i++){
     const img = imgs[i];
     const h = HEIGHTS[i % HEIGHTS.length];
@@ -279,23 +297,28 @@ async function handleCurate(){
     const el = document.createElement("img");
     el.alt = "";
     el.draggable = false;
-
-    try {
-      const res = await fetch(
-        `https://api.unsplash.com/photos/random?query=${img.kw}&orientation=portrait&content_filter=high&client_id=${UNSPLASH_KEY}`
-      );
-      const data = await res.json();
-      el.src = data.urls?.regular || `https://picsum.photos/seed/fashion${i}/400/${h}`;
-      el.dataset.unsplashId = data.id || "";
-    } catch {
-      el.src = `https://picsum.photos/seed/fashion${i}/400/${h}`;
-    }
-
     el.style.width = "100%";
     el.style.display = "block";
     el.style.transition = "transform 0.5s ease";
     el.onmouseenter = function(){ this.style.transform="scale(1.04)"; };
     el.onmouseleave = function(){ this.style.transform="scale(1)"; };
+
+    if(fetchedImages[i]) {
+      el.src = fetchedImages[i];
+    } else {
+      // Unsplash 보조
+      try {
+        const res = await fetch(
+          `https://api.unsplash.com/photos/random?query=${img.kw}&orientation=portrait&client_id=${UNSPLASH_KEY}`
+        );
+        const data = await res.json();
+        el.src = data.urls?.regular || `https://picsum.photos/seed/fashion${i}/400/${h}`;
+      } catch {
+        el.src = `https://picsum.photos/seed/fashion${i}/400/${h}`;
+      }
+    }
+
+    el.onerror = function(){ this.src=`https://picsum.photos/seed/fashion${i}/400/${h}`; };
 
     wrap.onclick = () => openModal(img, el.src);
     wrap.appendChild(el);
