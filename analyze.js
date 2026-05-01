@@ -6,17 +6,49 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { age, bodyType } = req.body || {};
+  const { age, bodyType, imageUrl } = req.body || {};
   if (!age || !bodyType) return res.status(400).json({ error: "missing params" });
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const naverId     = process.env.NAVER_CLIENT_ID;
-  const naverSecret = process.env.NAVER_CLIENT_SECRET;
-
+  const naverId      = process.env.NAVER_CLIENT_ID;
+  const naverSecret  = process.env.NAVER_CLIENT_SECRET;
   if (!anthropicKey) return res.status(500).json({ error: "Anthropic API key not configured" });
 
   try {
-    // 1) Claude로 스타일 분석 + 키워드 추출
+    // 메시지 구성 — 이미지 URL이 있으면 Claude Vision으로 실제 이미지 분석
+    const messageContent = [];
+
+    if (imageUrl) {
+      messageContent.push({
+        type: "image",
+        source: { type: "url", url: imageUrl }
+      });
+    }
+
+    messageContent.push({
+      type: "text",
+      content: undefined, // 아래에서 설정
+      text: `이 패션 이미지를 보고 실제로 착용한 옷을 분석해주세요.
+착용자: ${age} 여성, 체형: ${bodyType}
+
+${imageUrl ? "이미지에 실제로 보이는 옷만 분석하세요. 없는 아이템을 추가하지 마세요." : ""}
+
+JSON만 반환 (코드블록 없이):
+{
+  "coreStyle": "이미지에서 보이는 핵심 스타일 2-3단어",
+  "description": "실제 착용 룩의 특징 설명 2문장",
+  "keyItems": ["실제 착용 아이템1", "아이템2", "아이템3"],
+  "tip": "${bodyType} 체형을 위한 스타일링 팁 한 문장",
+  "occasions": ["어울리는 상황1", "상황2"],
+  "shopping": [
+    {"item": "이미지 속 실제 아이템명", "keyword": "네이버쇼핑 검색 키워드 (색상+디테일 포함, 짧게)", "category": "카테고리"},
+    {"item": "이미지 속 실제 아이템명", "keyword": "네이버쇼핑 검색 키워드", "category": "카테고리"},
+    {"item": "이미지 속 실제 아이템명", "keyword": "네이버쇼핑 검색 키워드", "category": "카테고리"}
+  ]
+}`
+    });
+
+    // 1) Claude Vision으로 이미지 분석
     const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -27,25 +59,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
-        messages: [{
-          role: "user",
-          content: `패션 스타일리스트로서 분석해주세요.
-착용자: ${age} 여성, 체형: ${bodyType}
-
-JSON만 반환 (코드블록 없이):
-{
-  "coreStyle": "핵심 스타일 키워드 2-3단어",
-  "description": "이 룩의 매력과 특징 설명 2문장",
-  "keyItems": ["핵심 아이템1", "아이템2", "아이템3"],
-  "tip": "${bodyType} 체형을 위한 스타일링 팁 한 문장",
-  "occasions": ["착용 상황1", "상황2"],
-  "shopping": [
-    {"item": "아이템명(한국어)", "keyword": "네이버쇼핑 검색 키워드 (짧게)", "category": "카테고리"},
-    {"item": "아이템명(한국어)", "keyword": "네이버쇼핑 검색 키워드 (짧게)", "category": "카테고리"},
-    {"item": "아이템명(한국어)", "keyword": "네이버쇼핑 검색 키워드 (짧게)", "category": "카테고리"}
-  ]
-}`
-        }]
+        messages: [{ role: "user", content: messageContent }]
       }),
     });
 
@@ -59,7 +73,7 @@ JSON만 반환 (코드블록 없이):
         analysis.shopping.map(async (s) => {
           try {
             const naverRes = await fetch(
-              `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(s.keyword)}&display=3&sort=sim`,
+              `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(s.keyword)}&display=1&sort=sim`,
               {
                 headers: {
                   "X-Naver-Client-Id": naverId,
