@@ -115,12 +115,50 @@ select option{background:#111009;color:#EDE8E0;}
 .product-item.selected .product-check{
   background:var(--accent);border-color:var(--accent);color:white;
 }
+.product-thumb{flex-shrink:0;cursor:zoom-in;}
 .product-thumb img{
   width:72px;height:72px;object-fit:cover;
-  border-radius:3px;flex-shrink:0;
-  border:1px solid var(--border);display:block;
+  border-radius:3px;border:1px solid var(--border);display:block;
+  transition:transform .2s;
 }
-.product-thumb{flex-shrink:0;}
+.product-thumb:hover img{transform:scale(1.06);}
+
+/* 줌 모달 */
+.zoom-overlay{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(8,7,6,0.97);
+  display:none;align-items:center;justify-content:center;
+  padding:20px;
+}
+.zoom-overlay.active{display:flex;}
+.zoom-box{
+  position:relative;
+  max-width:420px;width:100%;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:6px;overflow:hidden;
+}
+.zoom-close{
+  position:absolute;top:12px;right:14px;
+  background:rgba(8,7,6,0.6);border:none;
+  color:var(--text);font-size:20px;
+  cursor:pointer;width:32px;height:32px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  z-index:1;
+}
+.zoom-img{width:100%;max-height:480px;object-fit:contain;display:block;background:var(--surface);}
+.zoom-info{padding:18px 20px;}
+.zoom-title{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px;}
+.zoom-price{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--accent);font-weight:500;margin-bottom:14px;}
+.zoom-link{
+  display:inline-block;
+  background:var(--accent);color:var(--bg);
+  padding:10px 28px;border-radius:2px;
+  font-size:11px;letter-spacing:.15em;
+  text-decoration:none;font-family:'DM Sans',sans-serif;
+  transition:opacity .2s;
+}
+.zoom-link:hover{opacity:.85;}
 .total-bar{
   position:sticky;bottom:0;
   background:var(--surface2);
@@ -443,6 +481,7 @@ function renderAnalysis(a){
         s.products.forEach((p, pi) => {
           const pid = `prod_${si}_${pi}`;
           const priceNum = parseInt(p.price.replace(/[^0-9]/g, ""));
+          const title = p.title.replace(/<[^>]+>/g,"").replace(/'/g,"&apos;");
           html += `
             <div class="product-item selectable" onclick="toggleProduct('${pid}', ${priceNum}, this)">
               <div class="product-check" id="check_${pid}">
@@ -450,11 +489,11 @@ function renderAnalysis(a){
                   <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
               </div>
-              <a href="${p.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="product-thumb">
-                <img src="${p.image}" alt="${p.title}" onerror="this.style.display='none'"/>
-              </a>
+              <div class="product-thumb" onclick="event.stopPropagation(); openZoom('${p.image}','${title}','${p.price}','${p.link}')">
+                <img src="${p.image}" alt="${title}" onerror="this.style.display='none'"/>
+              </div>
               <div class="product-info">
-                <p class="product-item-title">${p.title.replace(/<[^>]+>/g,"")}</p>
+                <p class="product-item-title">${title}</p>
                 <div class="product-meta">
                   <span class="product-item-price">${p.price}</span>
                 </div>
@@ -525,6 +564,31 @@ function resetSelection(){
   const bar = document.getElementById("totalBar");
   if(bar) bar.style.display = "none";
 }
+
+// ── 상품 이미지 줌 ──────────────────────────────
+function openZoom(imgSrc, title, price, link){
+  document.getElementById("zoomImg").src = imgSrc;
+  document.getElementById("zoomTitle").textContent = title;
+  document.getElementById("zoomPrice").textContent = price;
+  document.getElementById("zoomLink").href = link;
+  document.getElementById("zoomOverlay").classList.add("active");
+}
+function closeZoom(){
+  document.getElementById("zoomOverlay").classList.remove("active");
+}
 </script>
+<!-- ── 상품 이미지 줌 모달 ── -->
+<div class="zoom-overlay" id="zoomOverlay" onclick="closeZoom()">
+  <div class="zoom-box" onclick="event.stopPropagation()">
+    <button class="zoom-close" onclick="closeZoom()">×</button>
+    <img class="zoom-img" id="zoomImg" src="" alt=""/>
+    <div class="zoom-info">
+      <p class="zoom-title" id="zoomTitle"></p>
+      <p class="zoom-price" id="zoomPrice"></p>
+      <a class="zoom-link" id="zoomLink" target="_blank" rel="noopener">쇼핑몰에서 보기 →</a>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
