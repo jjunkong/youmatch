@@ -1,12 +1,8 @@
 // api/analyze.js
-// API 키는 Vercel 환경변수에만 저장 — 브라우저에 절대 노출되지 않습니다
-
 export default async function handler(req, res) {
-  // CORS 헤더
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
@@ -40,9 +36,9 @@ JSON만 반환 (코드블록 없이):
   "tip": "${bodyType} 체형을 위한 스타일링 팁 한 문장",
   "occasions": ["착용 상황1", "상황2"],
   "shopping": [
-    {"item": "추천 상품명", "category": "카테고리", "price": "가격대"},
-    {"item": "추천 상품명", "category": "카테고리", "price": "가격대"},
-    {"item": "추천 상품명", "category": "카테고리", "price": "가격대"}
+    {"item": "상품명(한국어)", "keyword": "무신사/지그재그 검색용 짧은 키워드", "category": "카테고리"},
+    {"item": "상품명(한국어)", "keyword": "검색용 키워드", "category": "카테고리"},
+    {"item": "상품명(한국어)", "keyword": "검색용 키워드", "category": "카테고리"}
   ]
 }`
         }]
