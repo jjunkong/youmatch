@@ -481,7 +481,7 @@ function renderAnalysis(a){
         s.products.forEach((p, pi) => {
           const pid = `prod_${si}_${pi}`;
           const priceNum = parseInt(p.price.replace(/[^0-9]/g, ""));
-          const title = p.title.replace(/<[^>]+>/g,"").replace(/'/g,"&apos;");
+          const title = p.title.replace(/<[^>]+>/g,"");
           html += `
             <div class="product-item selectable" onclick="toggleProduct('${pid}', ${priceNum}, this)">
               <div class="product-check" id="check_${pid}">
@@ -489,8 +489,13 @@ function renderAnalysis(a){
                   <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
               </div>
-              <div class="product-thumb" onclick="event.stopPropagation(); openZoom('${p.image}','${title}','${p.price}','${p.link}')">
-                <img src="${p.image}" alt="${title}" onerror="this.style.display='none'"/>
+              <div class="product-thumb"
+                data-img="${p.image}"
+                data-title="${title.replace(/"/g,'&quot;')}"
+                data-price="${p.price}"
+                data-link="${p.link}"
+                onclick="event.stopPropagation(); openZoomFromEl(this)">
+                <img src="${p.image}" alt="" onerror="this.style.display='none'"/>
               </div>
               <div class="product-info">
                 <p class="product-item-title">${title}</p>
@@ -566,6 +571,17 @@ function resetSelection(){
 }
 
 // ── 상품 이미지 줌 ──────────────────────────────
+function openZoomFromEl(el){
+  const img   = el.dataset.img;
+  const title = el.dataset.title;
+  const price = el.dataset.price;
+  const link  = el.dataset.link;
+  document.getElementById("zoomImg").src = img;
+  document.getElementById("zoomTitle").textContent = title;
+  document.getElementById("zoomPrice").textContent = price;
+  document.getElementById("zoomLink").href = link;
+  document.getElementById("zoomOverlay").classList.add("active");
+}
 function openZoom(imgSrc, title, price, link){
   document.getElementById("zoomImg").src = imgSrc;
   document.getElementById("zoomTitle").textContent = title;
