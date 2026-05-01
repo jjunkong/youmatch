@@ -286,17 +286,13 @@ const FOLDER_MAP = {
   "60대_t-slim": "60_tall_thin",  "60대_t-avg": "60_tall_avg",  "60대_t-full": "60_tall_full",
 };
 
-// Cloudinary 폴더에서 이미지 목록 가져오기
+// Cloudinary 폴더 이미지 목록을 서버 API로 가져오기
 async function fetchCloudinaryImages(folder) {
   try {
-    const res = await fetch(
-      `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${folder}.json`
-    );
+    const res = await fetch(`/api/images?folder=${encodeURIComponent(folder)}`);
     if (!res.ok) return [];
     const data = await res.json();
-    return (data.resources || []).map(r =>
-      `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto/${folder}/${r.public_id.split("/").pop()}`
-    );
+    return data.urls || [];
   } catch {
     return [];
   }
