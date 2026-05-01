@@ -15,23 +15,41 @@ export default async function handler(req, res) {
   if (!anthropicKey) return res.status(500).json({ error: "Anthropic API key not configured" });
 
   try {
-    // 메시지 구성 — 이미지 URL이 있으면 Claude Vision으로 실제 이미지 분석
+    // 1) 이미지를 서버에서 직접 가져와 base64로 변환
     const messageContent = [];
 
     if (imageUrl) {
-      messageContent.push({
-        type: "image",
-        source: { type: "url", url: imageUrl }
-      });
+      try {
+        const imgRes = await fetch(imageUrl, {
+          headers: { "User-Agent": "Mozilla/5.0" }
+        });
+        if (imgRes.ok) {
+          const buffer = await imgRes.arrayBuffer();
+          const base64 = Buffer.from(buffer).toString("base64");
+          const contentType = imgRes.headers.get("content-type") || "image/jpeg";
+          const mediaType = contentType.split(";")[0].trim();
+
+          messageContent.push({
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mediaType,
+              data: base64,
+            }
+          });
+        }
+      } catch (imgErr) {
+        console.error("Image fetch error:", imgErr);
+      }
     }
 
     messageContent.push({
       type: "text",
-      content: undefined, // 아래에서 설정
       text: `이 패션 이미지를 보고 실제로 착용한 옷을 분석해주세요.
 착용자: ${age} 여성, 체형: ${bodyType}
 
-${imageUrl ? "이미지에 실제로 보이는 옷만 분석하세요. 없는 아이템을 추가하지 마세요." : ""}
+반드시 이미지에 실제로 보이는 옷만 분석하세요. 보이지 않는 아이템은 절대 추가하지 마세요.
+예: 핑크 반팔 티셔츠가 보이면 → "핑크 오버핏 반팔 티셔츠"로 분석
 
 JSON만 반환 (코드블록 없이):
 {
@@ -41,14 +59,14 @@ JSON만 반환 (코드블록 없이):
   "tip": "${bodyType} 체형을 위한 스타일링 팁 한 문장",
   "occasions": ["어울리는 상황1", "상황2"],
   "shopping": [
-    {"item": "이미지 속 실제 아이템명", "keyword": "네이버쇼핑 검색 키워드 (색상+디테일 포함, 짧게)", "category": "카테고리"},
-    {"item": "이미지 속 실제 아이템명", "keyword": "네이버쇼핑 검색 키워드", "category": "카테고리"},
-    {"item": "이미지 속 실제 아이템명", "keyword": "네이버쇼핑 검색 키워드", "category": "카테고리"}
+    {"item": "이미지 속 실제 아이템명", "keyword": "색상+스타일+아이템 (예: 핑크 오버핏 반팔 티셔츠 여성)", "category": "카테고리"},
+    {"item": "이미지 속 실제 아이템명", "keyword": "색상+스타일+아이템", "category": "카테고리"},
+    {"item": "이미지 속 실제 아이템명", "keyword": "색상+스타일+아이템", "category": "카테고리"}
   ]
 }`
     });
 
-    // 1) Claude Vision으로 이미지 분석
+    // 2) Claude Vision으로 실제 이미지 분석
     const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -67,7 +85,7 @@ JSON만 반환 (코드블록 없이):
     const raw = aiData.content?.find(c => c.type === "text")?.text || "{}";
     const analysis = JSON.parse(raw.replace(/```json|```/g, "").trim());
 
-    // 2) 각 아이템 키워드로 네이버 쇼핑 검색
+    // 3) 각 아이템 키워드로 네이버 쇼핑에서 유사 상품 1개 검색
     if (naverId && naverSecret && analysis.shopping?.length) {
       const shoppingWithProducts = await Promise.all(
         analysis.shopping.map(async (s) => {
