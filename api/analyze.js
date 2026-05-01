@@ -98,7 +98,7 @@ JSON만 반환 (코드블록 없이):
         analysis.shopping.map(async (s) => {
           try {
             const naverRes = await fetch(
-              `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(s.keyword)}&display=1&sort=sim`,
+              `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(s.keyword)}&display=3&sort=sim`,
               {
                 headers: {
                   "X-Naver-Client-Id": naverId,
