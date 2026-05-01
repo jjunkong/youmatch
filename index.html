@@ -96,30 +96,42 @@ select option{background:#111009;color:#EDE8E0;}
 .occasion{font-size:10px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 12px;}
 .shop-section{padding:14px 0;border-bottom:1px solid var(--border);}
 .shop-name{font-size:9px;letter-spacing:.18em;color:var(--accent);margin-bottom:8px;}
-.product-item{
-  display:flex;gap:12px;align-items:center;
-  padding:12px 0;border-bottom:1px solid var(--border);
-  text-decoration:none;transition:opacity .2s;
+.product-item.selectable{cursor:pointer;border-radius:4px;padding:10px 8px;margin:0 -8px;border-bottom:1px solid var(--border);}
+.product-item.selectable:hover{background:rgba(201,149,106,0.06);}
+.product-item.selectable.selected{background:rgba(201,149,106,0.12);border-color:rgba(201,149,106,0.3);}
+.product-check{
+  width:20px;height:20px;flex-shrink:0;
+  border:1.5px solid var(--border);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:transparent;transition:all .2s;
 }
-.product-item:hover{opacity:.8;}
-.product-item img{
+.product-item.selected .product-check{
+  background:var(--accent);border-color:var(--accent);color:white;
+}
+.product-thumb img{
   width:72px;height:72px;object-fit:cover;
   border-radius:3px;flex-shrink:0;
-  border:1px solid var(--border);
+  border:1px solid var(--border);display:block;
 }
-.product-info{flex:1;min-width:0;}
-.product-item-category{font-size:8px;letter-spacing:.18em;color:var(--accent);margin-bottom:3px;}
-.product-item-title{font-size:12px;color:var(--text);line-height:1.4;margin-bottom:6px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.product-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.product-item-mall{
-  font-size:10px;color:var(--text);font-weight:500;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:2px;padding:2px 7px;
+.product-thumb{flex-shrink:0;}
+.total-bar{
+  position:sticky;bottom:0;
+  background:var(--surface2);
+  border-top:1px solid var(--accent);
+  padding:14px 0;
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:8px;
 }
-.product-item-price{font-size:12px;color:var(--accent);font-weight:600;}
-.product-item-btn{font-size:9px;letter-spacing:.12em;color:var(--muted);border-bottom:1px solid var(--border);}
-.product-item--search{border-bottom:1px solid var(--border);}
+.total-left{display:flex;flex-direction:column;gap:3px;}
+.total-count{font-size:10px;letter-spacing:.1em;color:var(--muted);}
+.total-price{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--accent);font-weight:500;}
+.total-reset{
+  font-size:10px;letter-spacing:.1em;color:var(--muted);
+  background:none;border:1px solid var(--border);
+  border-radius:2px;padding:6px 12px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+}
+.total-reset:hover{border-color:var(--accent);color:var(--accent);}
 .spinner{width:14px;height:14px;display:inline-block;border:1.5px solid rgba(201,149,106,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .loading-row{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:16px 0;}
@@ -416,23 +428,32 @@ function renderAnalysis(a){
 
   if(a.shopping?.length){
     html += `<p class="shop-label">유사 상품</p>`;
-    a.shopping.forEach(s => {
+    a.shopping.forEach((s, si) => {
       html += `<div class="shop-section">
         <p class="shop-name">${s.item}</p>`;
 
       if(s.products?.length){
-        s.products.forEach(p => {
+        s.products.forEach((p, pi) => {
+          const pid = `prod_${si}_${pi}`;
+          const priceNum = parseInt(p.price.replace(/[^0-9]/g, ""));
           html += `
-            <a href="${p.link}" target="_blank" rel="noopener" class="product-item">
-              <img src="${p.image}" alt="${p.title}" onerror="this.style.display='none'"/>
+            <div class="product-item selectable" onclick="toggleProduct('${pid}', ${priceNum}, this)">
+              <div class="product-check" id="check_${pid}">
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <a href="${p.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="product-thumb">
+                <img src="${p.image}" alt="${p.title}" onerror="this.style.display='none'"/>
+              </a>
               <div class="product-info">
                 <p class="product-item-title">${p.title.replace(/<[^>]+>/g,"")}</p>
                 <div class="product-meta">
                   <span class="product-item-price">${p.price}</span>
                 </div>
-                <span class="product-item-btn">상품 보기 →</span>
+                <a href="${p.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="product-item-btn">상품 보기 →</a>
               </div>
-            </a>`;
+            </div>`;
         });
       } else {
         const q = encodeURIComponent(s.keyword || s.item);
@@ -448,9 +469,54 @@ function renderAnalysis(a){
 
       html += `</div>`;
     });
+
+    // 총 금액 바
+    html += `
+      <div class="total-bar" id="totalBar" style="display:none;">
+        <div class="total-left">
+          <span class="total-count" id="totalCount">0개 선택</span>
+          <span class="total-price" id="totalPrice">0원</span>
+        </div>
+        <button class="total-reset" onclick="resetSelection()">선택 초기화</button>
+      </div>`;
   }
 
   content.innerHTML = html;
+}
+
+// ── 상품 선택 + 총 금액 ──────────────────────────
+const selectedProducts = {};
+
+function toggleProduct(pid, price, el){
+  if(selectedProducts[pid]){
+    delete selectedProducts[pid];
+    el.classList.remove("selected");
+  } else {
+    selectedProducts[pid] = price;
+    el.classList.add("selected");
+  }
+  updateTotal();
+}
+
+function updateTotal(){
+  const keys = Object.keys(selectedProducts);
+  const total = keys.reduce((sum, k) => sum + selectedProducts[k], 0);
+  const bar = document.getElementById("totalBar");
+  if(!bar) return;
+  if(keys.length === 0){
+    bar.style.display = "none";
+  } else {
+    bar.style.display = "flex";
+    document.getElementById("totalCount").textContent = keys.length + "개 선택";
+    document.getElementById("totalPrice").textContent = "총 " + total.toLocaleString() + "원";
+  }
+}
+
+function resetSelection(){
+  Object.keys(selectedProducts).forEach(k => delete selectedProducts[k]);
+  document.querySelectorAll(".product-item.selected").forEach(el => el.classList.remove("selected"));
+  const bar = document.getElementById("totalBar");
+  if(bar) bar.style.display = "none";
 }
 </script>
 </body>
