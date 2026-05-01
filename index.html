@@ -245,6 +245,7 @@ const POOL = [
   {kw:"sporty+chic+woman+fashion",        ages:["20대","30대"],                      builds:["slim","avg"]},
 ];
 const HEIGHTS = [520,640,560,600,480,620];
+const UNSPLASH_KEY = "GLmpQTIEARfkymnswXJD2iWHbwm6NhklCXaqdGlno9Y";
 
 let currentAge = "", currentBody = "";
 
@@ -252,7 +253,7 @@ document.getElementById("selAge").addEventListener("change", function(){ current
 document.getElementById("selBody").addEventListener("change", function(){ currentBody=this.value; checkReady(); });
 function checkReady(){ document.getElementById("btnCurate").disabled = !(currentAge && currentBody); }
 
-function handleCurate(){
+async function handleCurate(){
   const build = BUILD_MAP[currentBody];
   let imgs = POOL.filter(img => img.ages.includes(currentAge) && img.builds.includes(build));
   if(imgs.length < 6){
@@ -263,31 +264,51 @@ function handleCurate(){
 
   document.getElementById("feedLabel").textContent = currentAge + " · " + BODY_LABELS[currentBody];
   document.getElementById("feedCount").textContent = imgs.length + "개";
+
   const masonry = document.getElementById("masonry");
   masonry.innerHTML = "";
-  imgs.forEach((img,i) => {
+
+  // Unsplash API로 각 키워드별 이미지 가져오기
+  for(let i = 0; i < imgs.length; i++){
+    const img = imgs[i];
     const h = HEIGHTS[i % HEIGHTS.length];
-    const seed = i + currentAge + currentBody; // 매번 다른 시드
     const wrap = document.createElement("div");
     wrap.className = "masonry-item";
     wrap.style.animationDelay = (i*55)+"ms";
-    wrap.onclick = () => openModal(img);
+
     const el = document.createElement("img");
-    // Unsplash Source API — 키워드 기반으로 항상 관련 사진
-    el.src = `https://source.unsplash.com/400x${h}/?${img.kw}&sig=${i}`;
     el.alt = "";
     el.draggable = false;
-    el.onerror = function(){ this.src=`https://picsum.photos/seed/fashion${i}/400/${h}`; };
+
+    try {
+      const res = await fetch(
+        `https://api.unsplash.com/photos/random?query=${img.kw}&orientation=portrait&content_filter=high&client_id=${UNSPLASH_KEY}`
+      );
+      const data = await res.json();
+      el.src = data.urls?.regular || `https://picsum.photos/seed/fashion${i}/400/${h}`;
+      el.dataset.unsplashId = data.id || "";
+    } catch {
+      el.src = `https://picsum.photos/seed/fashion${i}/400/${h}`;
+    }
+
+    el.style.width = "100%";
+    el.style.display = "block";
+    el.style.transition = "transform 0.5s ease";
+    el.onmouseenter = function(){ this.style.transform="scale(1.04)"; };
+    el.onmouseleave = function(){ this.style.transform="scale(1)"; };
+
+    wrap.onclick = () => openModal(img, el.src);
     wrap.appendChild(el);
     masonry.appendChild(wrap);
-  });
+  }
+
   const feed = document.getElementById("feed");
   feed.style.display = "block";
   setTimeout(() => feed.scrollIntoView({behavior:"smooth",block:"start"}), 80);
 }
 
-function openModal(img){
-  document.getElementById("modalImg").src = `https://source.unsplash.com/400x600/?${img.kw}`;
+function openModal(img, src){
+  document.getElementById("modalImg").src = src || `https://picsum.photos/seed/fashion/400/560`;
   document.getElementById("modalImg").onerror = function(){ this.src=`https://picsum.photos/seed/fashion/400/560`; };
   document.getElementById("modalMeta").textContent = currentAge + " · " + BODY_LABELS[currentBody];
   document.getElementById("modalContent").innerHTML = '<div class="loading-row"><span class="spinner"></span> AI 스타일 분석 중...</div>';
