@@ -110,16 +110,17 @@ select option{background:#111009;color:#EDE8E0;}
 }
 .product-info{flex:1;min-width:0;}
 .product-item-category{font-size:8px;letter-spacing:.18em;color:var(--accent);margin-bottom:3px;}
-.product-item-title{font-size:12px;color:var(--text);line-height:1.4;margin-bottom:4px;
+.product-item-title{font-size:12px;color:var(--text);line-height:1.4;margin-bottom:6px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.product-item-price{font-size:13px;color:var(--accent);font-weight:500;margin-bottom:2px;}
-.product-item-mall{font-size:10px;color:var(--muted);margin-bottom:6px;}
+.product-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.product-item-mall{
+  font-size:10px;color:var(--text);font-weight:500;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:2px;padding:2px 7px;
+}
+.product-item-price{font-size:12px;color:var(--accent);font-weight:600;}
 .product-item-btn{font-size:9px;letter-spacing:.12em;color:var(--muted);border-bottom:1px solid var(--border);}
 .product-item--search{border-bottom:1px solid var(--border);}
-.naver-search-btn{
-  display:inline-block;margin-top:6px;font-size:10px;color:var(--accent);
-  text-decoration:none;border-bottom:1px solid rgba(201,149,106,0.3);padding-bottom:2px;
-}
 .spinner{width:14px;height:14px;display:inline-block;border:1.5px solid rgba(201,149,106,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .loading-row{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:16px 0;}
@@ -264,11 +265,44 @@ const POOL = [
   {kw:"tailored+suit+woman+fashion",      ages:["30대","40대","50대"],                builds:["slim","avg"]},
   {kw:"sporty+chic+woman+fashion",        ages:["20대","30대"],                      builds:["slim","avg"]},
 ];
-const HEIGHTS = [520,640,560,600,480,620];
-const GOOGLE_API_KEY = "AIzaSyCLxTUJ-Znfd0JzKPnntJkAFDLT0MfNMrQ";
-const GOOGLE_CX = "957df819317a14b18";
-const UNSPLASH_KEY = "GLmpQTIEARfkymnswXJD2iWHbwm6NhklCXaqdGlno9Y";
+const CLOUD_NAME = "dblhgppk8";
 
+// 연령+체형 → Cloudinary 폴더명 매핑
+const FOLDER_MAP = {
+  "20대_s-slim": "20_short_thin", "20대_s-avg": "20_short_avg", "20대_s-full": "20_short_full",
+  "20대_m-slim": "20_mid_thin",   "20대_m-avg": "20_mid_avg",   "20대_m-full": "20_mid_full",
+  "20대_t-slim": "20_tall_thin",  "20대_t-avg": "20_tall_avg",  "20대_t-full": "20_tall_full",
+  "30대_s-slim": "30_short_thin", "30대_s-avg": "30_short_avg", "30대_s-full": "30_short_full",
+  "30대_m-slim": "30_mid_thin",   "30대_m-avg": "30_mid_avg",   "30대_m-full": "30_mid_full",
+  "30대_t-slim": "30_tall_thin",  "30대_t-avg": "30_tall_avg",  "30대_t-full": "30_tall_full",
+  "40대_s-slim": "40_short_thin", "40대_s-avg": "40_short_avg", "40대_s-full": "40_short_full",
+  "40대_m-slim": "40_mid_thin",   "40대_m-avg": "40_mid_avg",   "40대_m-full": "40_mid_full",
+  "40대_t-slim": "40_tall_thin",  "40대_t-avg": "40_tall_avg",  "40대_t-full": "40_tall_full",
+  "50대_s-slim": "50_short_thin", "50대_s-avg": "50_short_avg", "50대_s-full": "50_short_full",
+  "50대_m-slim": "50_mid_thin",   "50대_m-avg": "50_mid_avg",   "50대_m-full": "50_mid_full",
+  "50대_t-slim": "50_tall_thin",  "50대_t-avg": "50_tall_avg",  "50대_t-full": "50_tall_full",
+  "60대_s-slim": "60_short_thin", "60대_s-avg": "60_short_avg", "60대_s-full": "60_short_full",
+  "60대_m-slim": "60_mid_thin",   "60대_m-avg": "60_mid_avg",   "60대_m-full": "60_mid_full",
+  "60대_t-slim": "60_tall_thin",  "60대_t-avg": "60_tall_avg",  "60대_t-full": "60_tall_full",
+};
+
+// Cloudinary 폴더에서 이미지 목록 가져오기
+async function fetchCloudinaryImages(folder) {
+  try {
+    const res = await fetch(
+      `https://res.cloudinary.com/${CLOUD_NAME}/image/list/${folder}.json`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.resources || []).map(r =>
+      `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto/${folder}/${r.public_id.split("/").pop()}`
+    );
+  } catch {
+    return [];
+  }
+}
+
+const HEIGHTS = [520,640,560,600,480,620];
 let currentAge = "", currentBody = "";
 
 document.getElementById("selAge").addEventListener("change", function(){ currentAge=this.value; checkReady(); });
@@ -276,45 +310,46 @@ document.getElementById("selBody").addEventListener("change", function(){ curren
 function checkReady(){ document.getElementById("btnCurate").disabled = !(currentAge && currentBody); }
 
 async function handleCurate(){
-  const build = BUILD_MAP[currentBody];
-  let imgs = POOL.filter(img => img.ages.includes(currentAge) && img.builds.includes(build));
-  if(imgs.length < 6){
-    const extra = POOL.filter(img => img.ages.includes(currentAge) && !imgs.includes(img));
-    imgs = [...imgs, ...extra].slice(0,12);
-  } else { imgs = imgs.slice(0,12); }
-  if(!imgs.length) imgs = POOL.slice(0,12);
+  const key = `${currentAge}_${currentBody}`;
+  const folder = FOLDER_MAP[key] || "50_short_thin";
 
   document.getElementById("feedLabel").textContent = currentAge + " · " + BODY_LABELS[currentBody];
-  document.getElementById("feedCount").textContent = imgs.length + "개";
+  document.getElementById("feedCount").textContent = "로딩 중...";
 
   const masonry = document.getElementById("masonry");
-  masonry.innerHTML = "";
+  masonry.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:20px 0;">이미지 불러오는 중...</div>`;
 
-  // 연령+체형 한국어 키워드로 구글 이미지 검색
-  const searchQuery = `${currentAge} 여자 ${BODY_LABELS[currentBody]} 패션 코디`;
-  let fetchedImages = [];
+  const feed = document.getElementById("feed");
+  feed.style.display = "block";
+  setTimeout(() => feed.scrollIntoView({behavior:"smooth",block:"start"}), 80);
 
-  try {
-    const res = await fetch(
-      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(searchQuery)}&searchType=image&num=10&imgType=photo&safe=active`
-    );
-    const data = await res.json();
-    if(data.items) {
-      fetchedImages = data.items.map(item => item.link);
-    }
-  } catch(e) {
-    console.error("Google search error:", e);
+  // Cloudinary에서 이미지 목록 가져오기
+  let imageUrls = await fetchCloudinaryImages(folder);
+
+  // 해당 폴더 이미지 없으면 50_short_thin 폴더로 대체
+  if(!imageUrls.length) {
+    imageUrls = await fetchCloudinaryImages("50_short_thin");
   }
 
-  // 이미지가 부족하면 Unsplash로 보충
-  for(let i = 0; i < imgs.length; i++){
-    const img = imgs[i];
-    const h = HEIGHTS[i % HEIGHTS.length];
+  if(!imageUrls.length) {
+    masonry.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:20px 0;">이미지를 준비 중이에요. 곧 업데이트됩니다 :)</div>`;
+    document.getElementById("feedCount").textContent = "0개";
+    return;
+  }
+
+  // 랜덤 셔플
+  const shuffled = imageUrls.sort(() => Math.random() - 0.5);
+  document.getElementById("feedCount").textContent = shuffled.length + "개";
+  masonry.innerHTML = "";
+
+  shuffled.forEach((url, i) => {
     const wrap = document.createElement("div");
     wrap.className = "masonry-item";
     wrap.style.animationDelay = (i*55)+"ms";
+    wrap.onclick = () => openModal(url);
 
     const el = document.createElement("img");
+    el.src = url;
     el.alt = "";
     el.draggable = false;
     el.style.width = "100%";
@@ -322,48 +357,26 @@ async function handleCurate(){
     el.style.transition = "transform 0.5s ease";
     el.onmouseenter = function(){ this.style.transform="scale(1.04)"; };
     el.onmouseleave = function(){ this.style.transform="scale(1)"; };
+    el.onerror = function(){ this.closest(".masonry-item").style.display="none"; };
 
-    if(fetchedImages[i]) {
-      el.src = fetchedImages[i];
-    } else {
-      // Unsplash 보조
-      try {
-        const res = await fetch(
-          `https://api.unsplash.com/photos/random?query=${img.kw}&orientation=portrait&client_id=${UNSPLASH_KEY}`
-        );
-        const data = await res.json();
-        el.src = data.urls?.regular || `https://picsum.photos/seed/fashion${i}/400/${h}`;
-      } catch {
-        el.src = `https://picsum.photos/seed/fashion${i}/400/${h}`;
-      }
-    }
-
-    el.onerror = function(){ this.src=`https://picsum.photos/seed/fashion${i}/400/${h}`; };
-
-    wrap.onclick = () => openModal(img, el.src);
     wrap.appendChild(el);
     masonry.appendChild(wrap);
-  }
-
-  const feed = document.getElementById("feed");
-  feed.style.display = "block";
-  setTimeout(() => feed.scrollIntoView({behavior:"smooth",block:"start"}), 80);
+  });
 }
 
-function openModal(img, src){
-  const imgSrc = src || "";
-  document.getElementById("modalImg").src = imgSrc;
-  document.getElementById("modalImg").onerror = function(){ this.src=`https://picsum.photos/seed/fashion/400/560`; };
+function openModal(imgUrl){
+  document.getElementById("modalImg").src = imgUrl;
+  document.getElementById("modalImg").onerror = function(){ this.src=""; };
   document.getElementById("modalMeta").textContent = currentAge + " · " + BODY_LABELS[currentBody];
   document.getElementById("modalContent").innerHTML = '<div class="loading-row"><span class="spinner"></span> AI가 이미지를 분석하는 중...</div>';
   document.getElementById("modalOverlay").style.display = "flex";
   document.body.style.overflow = "hidden";
-  analyzeStyle(img, imgSrc);
+  analyzeStyle(imgUrl);
 }
 function closeModal(){ document.getElementById("modalOverlay").style.display="none"; document.body.style.overflow=""; }
 function handleOverlayClick(e){ if(e.target===e.currentTarget) closeModal(); }
 
-async function analyzeStyle(img, imgSrc){
+async function analyzeStyle(imgUrl){
   const content = document.getElementById("modalContent");
   try {
     const res = await fetch("/api/analyze", {
@@ -372,7 +385,7 @@ async function analyzeStyle(img, imgSrc){
       body: JSON.stringify({
         age: currentAge,
         bodyType: BODY_LABELS[currentBody],
-        imageUrl: imgSrc   // 실제 이미지 URL 전달
+        imageUrl: imgUrl
       })
     });
     if(!res.ok) throw new Error("server error");
@@ -409,29 +422,30 @@ function renderAnalysis(a){
   if(a.shopping?.length){
     html += `<p class="shop-label">유사 상품</p>`;
     a.shopping.forEach(s => {
-      const p = s.products?.[0]; // 가장 유사한 상품 1개만
+      const p = s.products?.[0];
       if(p){
         html += `
           <a href="${p.link}" target="_blank" rel="noopener" class="product-item">
-            <img src="${p.image}" alt="${p.title}"/>
+            <img src="${p.image}" alt="${p.title}" onerror="this.style.display='none'"/>
             <div class="product-info">
               <p class="product-item-category">${s.item}</p>
               <p class="product-item-title">${p.title.replace(/<[^>]+>/g,"")}</p>
-              <p class="product-item-price">${p.price}</p>
-              <p class="product-item-mall">${p.mall}</p>
+              <div class="product-meta">
+                <span class="product-item-mall">${p.mall}</span>
+                <span class="product-item-price">${p.price}</span>
+              </div>
               <span class="product-item-btn">상품 보기 →</span>
             </div>
           </a>`;
       } else {
-        // 상품 못 찾으면 네이버 검색으로
         const q = encodeURIComponent(s.keyword || s.item);
         html += `
           <a href="https://search.shopping.naver.com/search/all?query=${q}"
             target="_blank" rel="noopener" class="product-item product-item--search">
             <div class="product-info">
               <p class="product-item-category">${s.item}</p>
-              <p class="product-item-title" style="color:var(--muted)">검색 결과 보기</p>
-              <span class="product-item-btn">네이버 쇼핑 검색 →</span>
+              <p class="product-item-title" style="color:var(--muted)">유사 상품 검색하기</p>
+              <span class="product-item-btn">검색 결과 보기 →</span>
             </div>
           </a>`;
       }
