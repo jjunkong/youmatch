@@ -95,8 +95,7 @@ select option{background:#111009;color:#EDE8E0;}
 .occasion-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
 .occasion{font-size:10px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 12px;}
 .shop-section{padding:14px 0;border-bottom:1px solid var(--border);}
-.shop-name{color:var(--text);font-size:13px;font-weight:500;}
-.shop-cat{font-size:10px;color:var(--muted);margin-top:2px;margin-bottom:10px;}
+.shop-name{font-size:9px;letter-spacing:.18em;color:var(--accent);margin-bottom:8px;}
 .product-item{
   display:flex;gap:12px;align-items:center;
   padding:12px 0;border-bottom:1px solid var(--border);
@@ -418,32 +417,36 @@ function renderAnalysis(a){
   if(a.shopping?.length){
     html += `<p class="shop-label">유사 상품</p>`;
     a.shopping.forEach(s => {
-      const p = s.products?.[0];
-      if(p){
-        html += `
-          <a href="${p.link}" target="_blank" rel="noopener" class="product-item">
-            <img src="${p.image}" alt="${p.title}" onerror="this.style.display='none'"/>
-            <div class="product-info">
-              <p class="product-item-category">${s.item}</p>
-              <p class="product-item-title">${p.title.replace(/<[^>]+>/g,"")}</p>
-              <div class="product-meta">
-                <span class="product-item-price">${p.price}</span>
+      html += `<div class="shop-section">
+        <p class="shop-name">${s.item}</p>`;
+
+      if(s.products?.length){
+        s.products.forEach(p => {
+          html += `
+            <a href="${p.link}" target="_blank" rel="noopener" class="product-item">
+              <img src="${p.image}" alt="${p.title}" onerror="this.style.display='none'"/>
+              <div class="product-info">
+                <p class="product-item-title">${p.title.replace(/<[^>]+>/g,"")}</p>
+                <div class="product-meta">
+                  <span class="product-item-price">${p.price}</span>
+                </div>
+                <span class="product-item-btn">상품 보기 →</span>
               </div>
-              <span class="product-item-btn">상품 보기 →</span>
-            </div>
-          </a>`;
+            </a>`;
+        });
       } else {
         const q = encodeURIComponent(s.keyword || s.item);
         html += `
           <a href="https://search.shopping.naver.com/search/all?query=${q}"
             target="_blank" rel="noopener" class="product-item product-item--search">
             <div class="product-info">
-              <p class="product-item-category">${s.item}</p>
               <p class="product-item-title" style="color:var(--muted)">유사 상품 검색하기</p>
               <span class="product-item-btn">검색 결과 보기 →</span>
             </div>
           </a>`;
       }
+
+      html += `</div>`;
     });
   }
 
