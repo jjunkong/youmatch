@@ -95,11 +95,19 @@ select option{background:#111009;color:#EDE8E0;}
 .occasion-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
 .occasion{font-size:10px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 12px;}
 .shop-label{font-size:8px;letter-spacing:.22em;color:var(--muted);margin-bottom:12px;}
-.shop-item{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);font-size:13px;}
-.shop-name{color:var(--text);}
+.shop-item{padding:14px 0;border-bottom:1px solid var(--border);}
+.shop-name{color:var(--text);font-size:13px;}
 .shop-cat{font-size:10px;color:var(--muted);margin-top:2px;}
-.shop-price{font-size:11px;color:var(--accent);text-align:right;}
-.btn-shop{margin-top:6px;font-size:9px;letter-spacing:.12em;border:1px solid var(--border);border-radius:2px;padding:4px 10px;background:none;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;display:block;}
+.mall-links{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.mall-btn{
+  font-size:10px;letter-spacing:.08em;
+  border:1px solid;border-radius:2px;
+  padding:5px 10px;background:none;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  text-decoration:none;transition:opacity .2s;
+  white-space:nowrap;
+}
+.mall-btn:hover{opacity:.7;}
 .spinner{width:14px;height:14px;display:inline-block;border:1.5px solid rgba(201,149,106,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .loading-row{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;padding:16px 0;}
@@ -359,34 +367,60 @@ async function analyzeStyle(img){
   }
 }
 
+function getMallLinks(keyword) {
+  const q = encodeURIComponent(keyword);
+  return [
+    { name: "무신사", url: `https://www.musinsa.com/search/musinsa/goods?q=${q}`, color: "#0066ff" },
+    { name: "지그재그", url: `https://zigzag.kr/search?q=${q}`, color: "#ff4d6d" },
+    { name: "에이블리", url: `https://a-bly.com/search?q=${q}`, color: "#ff6b35" },
+    { name: "SSF샵", url: `https://www.ssfshop.com/search?q=${q}`, color: "#1a1a2e" },
+  ];
+}
+
 function renderAnalysis(a){
   const content = document.getElementById("modalContent");
   let html = "";
-  if(a.coreStyle) html += `<p class="core-label">CORE STYLE</p><p class="core-style">${a.coreStyle}</p>`;
+
+  if(a.coreStyle) html += `
+    <p class="core-label">CORE STYLE</p>
+    <p class="core-style">${a.coreStyle}</p>`;
+
   if(a.description) html += `<p class="desc">${a.description}</p>`;
+
   if(a.keyItems?.length) html += `
     <p class="core-label" style="margin-bottom:10px;">KEY ITEMS</p>
     <div class="tag-row">${a.keyItems.map(i=>`<span class="tag">${i}</span>`).join("")}</div>`;
+
   if(a.tip) html += `
     <div class="tip-box">
       <p class="tip-label">STYLE TIP</p>
       <p class="tip-text">${a.tip}</p>
     </div>`;
+
   if(a.occasions?.length) html += `
     <div class="occasion-row">${a.occasions.map(o=>`<span class="occasion">#${o}</span>`).join("")}</div>`;
+
   if(a.shopping?.length){
-    html += `<p class="shop-label">추천 쇼핑</p>`;
+    html += `<p class="shop-label">쇼핑 추천</p>`;
     a.shopping.forEach(s => {
+      const links = getMallLinks(s.keyword || s.item);
       html += `
         <div class="shop-item">
-          <div><p class="shop-name">${s.item}</p><p class="shop-cat">${s.category}</p></div>
-          <div style="text-align:right">
-            <p class="shop-price">${s.price}</p>
-            <button class="btn-shop">쇼핑하기 →</button>
+          <div style="margin-bottom:10px;">
+            <p class="shop-name">${s.item}</p>
+            <p class="shop-cat">${s.category}</p>
+          </div>
+          <div class="mall-links">
+            ${links.map(m => `
+              <a href="${m.url}" target="_blank" rel="noopener" class="mall-btn"
+                style="border-color:${m.color};color:${m.color};">
+                ${m.name}
+              </a>`).join("")}
           </div>
         </div>`;
     });
   }
+
   content.innerHTML = html;
 }
 </script>
